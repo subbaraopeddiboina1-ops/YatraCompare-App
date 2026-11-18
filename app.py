@@ -1,11 +1,14 @@
 from flask import Flask, render_template, request, redirect, url_for, session
 import sqlite3
+import os
 
 app = Flask(__name__)
-app.secret_key = 'super_secret_key_travel_app'
+app.secret_key = os.environ.get('SECRET_KEY', 'super_secret_key_travel_app')
+
+DB_NAME = 'travel_v2.db'
 
 def init_db():
-    conn = sqlite3.connect('travel_v2.db') # Changed name to avoid old cache error
+    conn = sqlite3.connect(DB_NAME)
     cursor = conn.cursor()
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS buses (
@@ -44,8 +47,8 @@ def home():
 
 @app.route('/search', methods=['POST'])
 def search():
-    from_city = request.form.get('from_city').strip().title()
-    to_city = request.form.get('to_city').strip().title()
+    from_city = request.form.get('from_city', '').strip().title()
+    to_city = request.form.get('to_city', '').strip().title()
     selected_platform = request.form.get('platform', 'All')
     bus_type = request.form.get('bus_type', 'All')
     departure_time = request.form.get('departure_time', 'All')
@@ -54,7 +57,7 @@ def search():
     if not max_price:
         max_price = '10000'
 
-    conn = sqlite3.connect('travel_v2.db')
+    conn = sqlite3.connect(DB_NAME)
     cursor = conn.cursor()
     
     query = '''
@@ -113,15 +116,15 @@ def add_bus():
         return "Unauthorized Access!", 403
         
     operator = request.form.get('operator')
-    from_city = request.form.get('from_city').strip().title()
-    to_city = request.form.get('to_city').strip().title()
+    from_city = request.form.get('from_city', '').strip().title()
+    to_city = request.form.get('to_city', '').strip().title()
     base_price = request.form.get('base_price')
     platform = request.form.get('platform')
     bus_type = request.form.get('bus_type')
     departure_time = request.form.get('departure_time')
     link = request.form.get('link')
     
-    conn = sqlite3.connect('travel_v2.db')
+    conn = sqlite3.connect(DB_NAME)
     cursor = conn.cursor()
     cursor.execute('''
         INSERT INTO buses (operator, from_city, to_city, base_price, platform, bus_type, departure_time, link)
