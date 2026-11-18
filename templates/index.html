@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YatraCompare - Bus Ticket Price Comparison</title>
+    <style>
+        :root {
+            --primary: #d84e55;
+            --primary-dark: #b83840;
+            --bg-color: #f0f2f5;
+            --card-bg: #ffffff;
+            --text-main: #333333;
+            --text-muted: #666666;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: var(--bg-color);
+            color: var(--text-main);
+            margin: 0;
+            padding: 0;
+        }
+        header {
+            background: var(--primary);
+            color: white;
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        header h1 { margin: 0; font-size: 24px; }
+        header p { margin: 5px 0 0 0; font-size: 14px; opacity: 0.9; }
+
+        .wrapper {
+            max-width: 700px;
+            margin: 20px auto;
+            padding: 0 15px;
+        }
+
+        .card-box {
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            margin-bottom: 20px;
+        }
+
+        .admin-nav {
+            text-align: right;
+            font-size: 13px;
+            margin-bottom: 15px;
+        }
+        .admin-nav a { color: var(--primary); text-decoration: none; font-weight: bold; }
+        .admin-nav a:hover { text-decoration: underline; }
+
+        label {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-muted);
+            display: block;
+            margin-bottom: 5px;
+            margin-top: 12px;
+        }
+        input, select {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #dcdcdc;
+            border-radius: 6px;
+            font-size: 14px;
+            box-sizing: border-box;
+            background: #fafafa;
+            transition: all 0.3s;
+        }
+        input:focus, select:focus {
+            border-color: var(--primary);
+            outline: none;
+            background: #fff;
+            box-shadow: 0 0 0 3px rgba(216, 78, 85, 0.1);
+        }
+
+        .row { display: flex; gap: 15px; }
+        .col { flex: 1; }
+
+        .btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 14px;
+            font-size: 16px;
+            font-weight: bold;
+            border-radius: 6px;
+            width: 100%;
+            cursor: pointer;
+            margin-top: 20px;
+            transition: background 0.2s;
+        }
+        .btn:hover { background: var(--primary-dark); }
+        .btn-green { background: #28a745; }
+        .btn-green:hover { background: #218838; }
+
+        /* Search Result Bus Cards */
+        .bus-card {
+            background: #fff;
+            border: 1px solid #e0e0e0;
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .bus-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+            border-color: var(--primary);
+        }
+        .bus-info h4 { margin: 0 0 5px 0; font-size: 18px; color: #222; }
+        .bus-info p { margin: 3px 0; font-size: 13px; color: var(--text-muted); }
+        
+        .price-action { text-align: right; }
+        .price { font-size: 20px; font-weight: bold; color: #2e7d32; margin-bottom: 8px; }
+        .book-btn {
+            background: #ff6d00;
+            color: white;
+            padding: 8px 18px;
+            border-radius: 5px;
+            text-decoration: none;
+            font-size: 13px;
+            font-weight: bold;
+            display: inline-block;
+            transition: background 0.2s;
+        }
+        .book-btn:hover { background: #e65100; }
+
+        .tag {
+            background: #e3f2fd;
+            color: #1565c0;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: bold;
+            margin-right: 5px;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>🚌 YatraCompare</h1>
+        <p>Compare lowest bus ticket prices across Paytm, RedBus & AbhiBus instantly</p>
+    </header>
+
+    <div class="wrapper">
+        <!-- Search Form Card -->
+        <div class="card-box">
+            <div class="admin-nav">
+                {% if session.get('logged_in') %}
+                    <span><b>Admin Mode Active</b></span> | <a href="/logout">Logout</a>
+                {% else %}
+                    <a href="#login-section">Admin Login</a>
+                {% endif %}
+            </div>
+
+            <h3 style="margin-top:0; color:#444;">Search Bus Tickets</h3>
+            <form action="/search" method="POST">
+                <div class="row">
+                    <div class="col">
+                        <label>From City:</label>
+                        <input type="text" name="from_city" placeholder="e.g. Hyderabad" required>
+                    </div>
+                    <div class="col">
+                        <label>To City:</label>
+                        <input type="text" name="to_city" placeholder="e.g. Vijayawada" required>
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <div class="col">
+                        <label>Platform:</label>
+                        <select name="platform">
+                            <option value="All">All Platforms</option>
+                            <option value="RedBus">RedBus</option>
+                            <option value="AbhiBus">AbhiBus</option>
+                            <option value="Paytm Bus">Paytm Bus</option>
+                        </select>
+                    </div>
+                    <div class="col">
+                        <label>Bus Type:</label>
+                        <select name="bus_type">
+                            <option value="All">All Types</option>
+                            <option value="AC Sleeper">AC Sleeper</option>
+                            <option value="AC Seater">AC Seater</option>
+                            <option value="Non-AC Sleeper">Non-AC Sleeper</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col">
+                        <label>Departure Time:</label>
+                        <select name="departure_time">
+                            <option value="All">Any Time</option>
+                            <option value="Morning">Morning</option>
+                            <option value="Evening">Evening</option>
+                            <option value="Night">Night</option>
+                        </select>
+                    </div>
+                    <div class="col">
+                        <label>Max Budget (₹):</label>
+                        <input type="number" name="max_price" placeholder="e.g. 1000" value="1000">
+                    </div>
+                </div>
+                
+                <button type="submit" class="btn">Search Best Deals</button>
+            </form>
+        </div>
+
+        <!-- Search Results Section -->
+        {% if results is not none %}
+            <div class="card-box">
+                <h3 style="margin-top:0;">Available Buses (Lowest First):</h3>
+                {% if results %}
+                    {% for bus in results %}
+                        <div class="bus-card">
+                            <div class="bus-info">
+                                <h4>{{ bus.operator }}</h4>
+                                <p>
+                                    <span class="tag">{{ bus.bus_type }}</span> 
+                                    <span class="tag" style="background:#e8f5e9; color:#2e7d32;">{{ bus.departure_time }}</span>
+                                    via <b>{{ bus.platform }}</b>
+                                </p>
+                            </div>
+                            <div class="price-action">
+                                <div class="price">₹{{ bus.base_price }}</div>
+                                <a href="{{ bus.link }}" target="_blank" class="book-btn">Book Now</a>
+                            </div>
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <p style="color: var(--text-muted); text-align:center; padding: 20px;">No buses found matching your search criteria!</p>
+                {% endif %}
+            </div>
+        {% endif %}
+
+        <!-- Secure Admin Panel or Login Form -->
+        {% if session.get('logged_in') %}
+        <div class="card-box" style="border-top: 4px solid #28a745;">
+            <h3 style="color: #28a745; margin-top:0;">🔐 Admin Panel: Add New Bus</h3>
+            <form action="/add" method="POST">
+                <label>Operator Name:</label>
+                <input type="text" name="operator" placeholder="e.g. Kaveri Travels" required>
+                
+                <div class="row">
+                    <div class="col">
+                        <label>From:</label>
+                        <input type="text" name="from_city" placeholder="Hyderabad" required>
+                    </div>
+                    <div class="col">
+                        <label>To:</label>
+                        <input type="text" name="to_city" placeholder="Vijayawada" required>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col">
+                        <label>Price (₹):</label>
+                        <input type="number" name="base_price" placeholder="600" required>
+                    </div>
+                    <div class="col">
+                        <label>Platform:</label>
+                        <select name="platform">
+                            <option value="RedBus">RedBus</option>
+                            <option value="AbhiBus">AbhiBus</option>
+                            <option value="Paytm Bus">Paytm Bus</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col">
+                        <label>Bus Type:</label>
+                        <select name="bus_type">
+                            <option value="AC Sleeper">AC Sleeper</option>
+                            <option value="AC Seater">AC Seater</option>
+                            <option value="Non-AC Sleeper">Non-AC Sleeper</option>
+                        </select>
+                    </div>
+                    <div class="col">
+                        <label>Departure Time:</label>
+                        <select name="departure_time">
+                            <option value="Morning">Morning</option>
+                            <option value="Evening">Evening</option>
+                            <option value="Night">Night</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <label>Booking URL Link:</label>
+                <input type="text" name="link" placeholder="https://www.redbus.in" required>
+                
+                <button type="submit" class="btn btn-green">Add Bus to Database</button>
+            </form>
+        </div>
+        {% else %}
+        <div id="login-section" class="card-box">
+            <h3 style="margin-top:0; color:#555;">🔑 Admin Login</h3>
+            <form action="/admin-login" method="POST">
+                <label>Username:</label>
+                <input type="text" name="username" placeholder="admin" required>
+                
+                <label>Password:</label>
+                <input type="password" name="password" placeholder="admin123" required>
+                
+                <button type="submit" class="btn" style="background:#007bff;">Login as Admin</button>
+            </form>
+        </div>
+        {% endif %}
+    </div>
+
+</body>
+</html>
